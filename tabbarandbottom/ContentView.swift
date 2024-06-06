@@ -2,13 +2,13 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: Int = 0
-    @State private var overlayHeight: CGFloat = 200
-    
+    @State private var overlayHeight: CGFloat = 300 // Initial height
+    @State private var isDragging = false
+    @State private var dragGestureVerticalDirection: VerticalDirection? = nil
     
     var body: some View {
         VStack {
             Spacer()
-            
             
             ZStack(alignment: .bottom) {
                 MainView()
@@ -16,6 +16,35 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     OverlayView(height: $overlayHeight, selectedTab: selectedTab)
                         .frame(maxWidth: .infinity)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    isDragging = true
+                                    let gestureVerticalDirection: VerticalDirection = value.translation.height < 0 ? .up : .down
+                                    if dragGestureVerticalDirection == nil {
+                                        dragGestureVerticalDirection = gestureVerticalDirection
+                                    }
+                                    if gestureVerticalDirection != dragGestureVerticalDirection {
+                                        dragGestureVerticalDirection = nil
+                                    }
+                                    
+                                    var proposed: CGFloat
+                                    if gestureVerticalDirection == .up {
+                                        proposed = max(150, min(UIScreen.main.bounds.height - value.location.y, UIScreen.main.bounds.height - 200))
+                                    } else {
+                                        proposed = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
+                                    }
+                                    
+                                    overlayHeight = proposed
+                                }
+                                .onEnded { value in
+                                    isDragging = false
+                                    dragGestureVerticalDirection = nil
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        overlayHeight = snapHeight(overlayHeight)
+                                    }
+                                }
+                        )
                     
                     TabView(selection: $selectedTab) {
                         Color.clear
@@ -35,14 +64,26 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.bottom)
             }
         }
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    overlayHeight = max(100, UIScreen.main.bounds.height - value.location.y)
-                }
-        )
+    }
+    
+    // Function to snap the height to the nearest snapping point
+    private func snapHeight(_ proposedHeight: CGFloat) -> CGFloat {
+        if proposedHeight >= UIScreen.main.bounds.height - 200 {
+            return UIScreen.main.bounds.height - 200
+        } else if proposedHeight >= 300 {
+            return 300
+        } else {
+            return 150
+        }
+    }
+    
+    enum VerticalDirection {
+        case up
+        case down
     }
 }
+
+
 
 struct MainView: View {
     @State private var isSheetPresented = false
