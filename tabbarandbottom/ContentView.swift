@@ -35,7 +35,9 @@ struct ContentView: View {
                                         proposed = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
                                     }
                                     
-                                    overlayHeight = proposed
+                                    withAnimation {
+                                        overlayHeight = proposed
+                                    }
                                 }
                                 .onEnded { value in
                                     isDragging = false
@@ -72,8 +74,10 @@ struct ContentView: View {
             return UIScreen.main.bounds.height - 200
         } else if proposedHeight >= 300 {
             return 300
-        } else {
+        } else if proposedHeight >= 150 {
             return 150
+        } else {
+            return proposedHeight
         }
     }
     
