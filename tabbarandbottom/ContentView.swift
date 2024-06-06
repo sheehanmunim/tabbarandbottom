@@ -1,24 +1,133 @@
-//
-//  ContentView.swift
-//  tabbarandbottom
-//
-//  Created by Sheehan Munim on 6/6/24.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab: Int = 0
+    @State private var overlayHeight: CGFloat = 200
+    
+    
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Spacer()
+            
+            
+            ZStack(alignment: .bottom) {
+                MainView()
+                
+                VStack(spacing: 0) {
+                    OverlayView(height: $overlayHeight, selectedTab: selectedTab)
+                        .frame(maxWidth: .infinity)
+                    
+                    TabView(selection: $selectedTab) {
+                        Color.clear
+                            .tabItem {
+                                Label("Tab 1", systemImage: "1.square.fill")
+                            }
+                            .tag(0)
+                        
+                        Color.clear
+                            .tabItem {
+                                Label("Tab 2", systemImage: "2.square.fill")
+                            }
+                            .tag(1)
+                    }
+                    .frame(height: 50)
+                }
+                .edgesIgnoringSafeArea(.bottom)
+            }
         }
-        .padding()
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    overlayHeight = max(100, UIScreen.main.bounds.height - value.location.y)
+                }
+        )
     }
 }
 
-#Preview {
-    ContentView()
+struct MainView: View {
+    @State private var isSheetPresented = false
+    
+    var body: some View {
+        VStack {
+            Text("Main View")
+                .font(.largeTitle)
+                .padding()
+            Spacer()
+            
+            Button(action: {
+                isSheetPresented = true
+            }) {
+                Text("Button in Main View")
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            }
+            .sheet(isPresented: $isSheetPresented) {
+                // The content to be presented in the sheet
+                SheetContentView()
+            }
+            Spacer() // Add Spacer to push the button to the bottom
+        }
+    }
+}
+
+
+struct OverlayView: View {
+    @Binding var height: CGFloat
+    var selectedTab: Int
+    let handleHeight: CGFloat = 5
+    let handleWidth: CGFloat = 50
+    
+    var body: some View {
+        ZStack(alignment: .top) {
+            VStack {
+                if selectedTab == 0 {
+                    Text("Overlay View for Tab 1")
+                        .padding()
+                } else if selectedTab == 1 {
+                    Text("Overlay View for Tab 2")
+                        .padding()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background(
+                RoundedRectangle(cornerRadius: 0, style: .continuous)
+                    .fill(Color.blue.opacity(0.8))
+                    .shadow(radius: 10)
+            )
+            .clipShape(RoundedCornersShape(corners: [.topLeft, .topRight], radius: 10))
+            
+            RoundedRectangle(cornerRadius: 5)
+                .frame(width: handleWidth, height: handleHeight)
+                .foregroundColor(.white)
+                .opacity(0.5)
+                .padding(.top, 10)
+        }
+    }
+}
+
+
+
+struct RoundedCornersShape: Shape {
+    var corners: UIRectCorner
+    var radius: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
+    }
+}
+
+
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }
