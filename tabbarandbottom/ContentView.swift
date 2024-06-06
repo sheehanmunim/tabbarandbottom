@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var overlayHeight: CGFloat = 300 // Initial height
     @State private var isDragging = false
     @State private var dragGestureVerticalDirection: VerticalDirection? = nil
+    @State private var proposedHeight: CGFloat = 0 // Proposed height during drag gesture
     
     var body: some View {
         VStack {
@@ -28,22 +29,17 @@ struct ContentView: View {
                                         dragGestureVerticalDirection = nil
                                     }
                                     
-                                    var proposed: CGFloat
                                     if gestureVerticalDirection == .up {
-                                        proposed = max(150, min(UIScreen.main.bounds.height - value.location.y, UIScreen.main.bounds.height - 200))
+                                        proposedHeight = max(150, min(UIScreen.main.bounds.height - value.location.y, UIScreen.main.bounds.height - 200))
                                     } else {
-                                        proposed = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
-                                    }
-                                    
-                                    withAnimation {
-                                        overlayHeight = proposed
+                                        proposedHeight = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
                                     }
                                 }
                                 .onEnded { value in
                                     isDragging = false
                                     dragGestureVerticalDirection = nil
                                     withAnimation(.easeInOut(duration: 0.3)) {
-                                        overlayHeight = snapHeight(overlayHeight)
+                                        overlayHeight = snapHeight(proposedHeight)
                                     }
                                 }
                         )
@@ -86,6 +82,8 @@ struct ContentView: View {
         case down
     }
 }
+
+
 
 
 
