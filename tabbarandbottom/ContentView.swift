@@ -69,6 +69,8 @@ struct FirstTabView: View {
                 .font(.largeTitle)
                 .padding()
         }
+      
+        
         .sheet(isPresented: $viewModel.isSettingsPresented) {
             SettingsContentView()
                 .presentationCornerRadius(25)

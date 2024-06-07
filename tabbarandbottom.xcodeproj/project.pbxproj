@@ -13,6 +13,7 @@
 		207987B52C125ED7006D385D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 207987B42C125ED7006D385D /* Preview Assets.xcassets */; };
 		20DB6DB12C126EA700C848A8 /* SheetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20DB6DB02C126EA700C848A8 /* SheetContentView.swift */; };
 		20DB6DB82C12F02600C848A8 /* SettingsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20DB6DB72C12F02600C848A8 /* SettingsContentView.swift */; };
+		20DB6DBA2C130D8A00C848A8 /* InitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20DB6DB92C130D8900C848A8 /* InitialView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +24,7 @@
 		207987B42C125ED7006D385D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		20DB6DB02C126EA700C848A8 /* SheetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetContentView.swift; sourceTree = "<group>"; };
 		20DB6DB72C12F02600C848A8 /* SettingsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContentView.swift; sourceTree = "<group>"; };
+		20DB6DB92C130D8900C848A8 /* InitialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 				20DB6DB72C12F02600C848A8 /* SettingsContentView.swift */,
 				20DB6DB02C126EA700C848A8 /* SheetContentView.swift */,
 				207987B12C125ED7006D385D /* Assets.xcassets */,
+				20DB6DB92C130D8900C848A8 /* InitialView.swift */,
 				207987B32C125ED7006D385D /* Preview Content */,
 			);
 			path = tabbarandbottom;
@@ -146,6 +149,7 @@
 				207987B02C125ED6006D385D /* ContentView.swift in Sources */,
 				207987AE2C125ED6006D385D /* tabbarandbottomApp.swift in Sources */,
 				20DB6DB12C126EA700C848A8 /* SheetContentView.swift in Sources */,
+				20DB6DBA2C130D8A00C848A8 /* InitialView.swift in Sources */,
 				20DB6DB82C12F02600C848A8 /* SettingsContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
