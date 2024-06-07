@@ -1,177 +1,97 @@
 import SwiftUI
 
-struct ContentView: View {
-    @State private var selectedTab: Int = 0
-    @State private var overlayHeight: CGFloat = 300 // Initial height
-    @State private var isDragging = false
-    @State private var dragGestureVerticalDirection: VerticalDirection? = nil
-    
-    var body: some View {
-        VStack {
-            Spacer()
-            
-            ZStack(alignment: .bottom) {
-                MainView()
-                
-                VStack(spacing: 0) {
-                    OverlayView(height: $overlayHeight, selectedTab: selectedTab)
-                        .frame(maxWidth: .infinity)
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    isDragging = true
-                                    let gestureVerticalDirection: VerticalDirection = value.translation.height < 0 ? .up : .down
-                                    if dragGestureVerticalDirection == nil {
-                                        dragGestureVerticalDirection = gestureVerticalDirection
-                                    }
-                                    if gestureVerticalDirection != dragGestureVerticalDirection {
-                                        dragGestureVerticalDirection = nil
-                                    }
-                                    
-                                    var proposed: CGFloat
-                                    if gestureVerticalDirection == .up {
-                                        proposed = overlayHeight - value.translation.height
-
-                                    } else {
-                                        proposed = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
-                                    }
-                                    
-                                    overlayHeight = proposed
-                                }
-                                .onEnded { value in
-                                    isDragging = false
-                                    dragGestureVerticalDirection = nil
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        overlayHeight = snapHeight(overlayHeight)
-                                    }
-                                }
-                        )
-                    
-                    TabView(selection: $selectedTab) {
-                        Color.clear
-                            .tabItem {
-                                Label("Tab 1", systemImage: "1.square.fill")
-                            }
-                            .tag(0)
-                        
-                        Color.clear
-                            .tabItem {
-                                Label("Tab 2", systemImage: "2.square.fill")
-                            }
-                            .tag(1)
-                    }
-                    .frame(height: 50)
-                }
-                .edgesIgnoringSafeArea(.bottom)
-            }
-        }
-    }
-    
-    // Function to snap the height to the nearest snapping point
-    private func snapHeight(_ proposedHeight: CGFloat) -> CGFloat {
-        if proposedHeight >= UIScreen.main.bounds.height - 200 {
-            return UIScreen.main.bounds.height - 200
-        } else if proposedHeight >= 300 {
-            return 300
-        } else if proposedHeight >= 150 {
-            return 150
-        } else {
-            return proposedHeight
-        }
-    }
-    
-    enum VerticalDirection {
-        case up
-        case down
-    }
+// Shared ViewModel to manage the sheet presentation state
+class SharedViewModel: ObservableObject {
+    @Published var isSettingsPresented = false
 }
 
-
-
-struct MainView: View {
-    @State private var isSheetPresented = false
+struct ContentView: View {
+    @State private var isSheetPresented = true
+    @StateObject private var viewModel = SharedViewModel()
     
     var body: some View {
         VStack {
-            Text("Main View")
+            Text("Hello, World!")
                 .font(.largeTitle)
                 .padding()
-            Spacer()
             
             Button(action: {
-                isSheetPresented = true
+                viewModel.isSettingsPresented = true
             }) {
-                Text("Button in Main View")
+                Text("Show Settings in First Tab")
+                    .font(.title)
                     .padding()
-                    .background(Color.green)
+                    .background(Color.blue)
                     .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .cornerRadius(10)
             }
-            .sheet(isPresented: $isSheetPresented) {
-                // The content to be presented in the sheet
-                SheetContentView()
-            }
-            Spacer() // Add Spacer to push the button to the bottom
+        }
+        .sheet(isPresented: $isSheetPresented, onDismiss: {
+            // Re-present the sheet immediately if it gets dismissed
+            isSheetPresented = true
+        }) {
+            SheetView()
+                .environmentObject(viewModel)
+                .presentationDetents([.height(150), .medium, .large])
+                .presentationCornerRadius(25)
+                .presentationBackground(.regularMaterial)
+                .presentationBackgroundInteraction(.enabled(upThrough: .large))
+                .interactiveDismissDisabled()
         }
     }
 }
 
-
-struct OverlayView: View {
-    @Binding var height: CGFloat
-    var selectedTab: Int
-    let handleHeight: CGFloat = 5
-    let handleWidth: CGFloat = 50
+struct SheetView: View {
+    @EnvironmentObject var viewModel: SharedViewModel
     
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack {
-                if selectedTab == 0 {
-                    Text("Overlay View for Tab 1")
-                        .padding()
-                } else if selectedTab == 1 {
-                    Text("Overlay View for Tab 2")
-                        .padding()
+        TabView {
+            FirstTabView()
+                .tabItem {
+                    Image(systemName: "1.square.fill")
+                    Text("First Tab")
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .background(
-                RoundedRectangle(cornerRadius: 0, style: .continuous)
-                    .fill(Color.blue.opacity(0.8))
-                    .shadow(radius: 10)
-            )
-            .clipShape(RoundedCornersShape(corners: [.topLeft, .topRight], radius: 10))
-            
-            RoundedRectangle(cornerRadius: 5)
-                .frame(width: handleWidth, height: handleHeight)
-                .foregroundColor(.white)
-                .opacity(0.5)
-                .padding(.top, 10)
+            SecondTabView()
+                .tabItem {
+                    Image(systemName: "2.square.fill")
+                    Text("Second Tab")
+                }
         }
     }
 }
 
-
-
-struct RoundedCornersShape: Shape {
-    var corners: UIRectCorner
-    var radius: CGFloat
+struct FirstTabView: View {
+    @EnvironmentObject var viewModel: SharedViewModel
     
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
+    var body: some View {
+        VStack {
+            Text("This is the first tab!")
+                .font(.largeTitle)
+                .padding()
+        }
+        .sheet(isPresented: $viewModel.isSettingsPresented) {
+            SettingsContentView()
+                .presentationCornerRadius(25)
+                .presentationBackgroundInteraction(.enabled(upThrough: .large))
+        }
+        .padding()
+    }
+}
+
+struct SecondTabView: View {
+    var body: some View {
+        VStack {
+            Text("This is the second tab!")
+                .font(.largeTitle)
+                .padding()
+            // Additional content for the second tab
+        }
+        .padding()
     }
 }
 
 
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+#Preview {
+    ContentView()
 }
