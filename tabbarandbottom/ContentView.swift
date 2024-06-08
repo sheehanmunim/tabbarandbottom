@@ -1,99 +1,71 @@
 import SwiftUI
 
-// Shared ViewModel to manage the sheet presentation state
-class SharedViewModel: ObservableObject {
-    @Published var isSettingsPresented = false
-}
-
 struct ContentView: View {
-    @State private var isSheetPresented = true
-    @StateObject private var viewModel = SharedViewModel()
-    
+    @State private var isShowingOverlay = true
+    @State private var overlayHeight: CGFloat = 200
+    private let tabBarHeight: CGFloat = 100
+    private let minHeight: CGFloat = 100
+    private let maxHeight: CGFloat = 655
+    private let snapPositions: [CGFloat] = [200, 400, 655] // Define snap positions
+
     var body: some View {
         VStack {
-            Text("Hello, World!")
-                .font(.largeTitle)
-                .padding()
-            
-            Button(action: {
-                viewModel.isSettingsPresented = true
-            }) {
-                Text("Show Settings in First Tab")
-                    .font(.title)
-                    .padding()
+            ZStack(alignment: .bottom) {
+                if isShowingOverlay {
+                    // Overlay
+                    Rectangle()
+                        .foregroundColor(.red)
+                        .frame(height: overlayHeight)
+                        .padding(.bottom, tabBarHeight)
+                        .transition(.move(edge: .bottom))
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    let newHeight = overlayHeight - value.translation.height
+                                    overlayHeight = min(max(newHeight, minHeight), maxHeight)
+                                }
+                                .onEnded { value in
+                                    withAnimation(.spring()) {
+                                        overlayHeight = nearestSnapPosition(to: overlayHeight)
+                                    }
+                                }
+                        )
+                }
+
+                // TabBar
+                TabBar()
+                    .frame(height: tabBarHeight)
                     .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
             }
         }
-        .sheet(isPresented: $isSheetPresented, onDismiss: {
-            // Re-present the sheet immediately if it gets dismissed
-            isSheetPresented = true
-        }) {
-            SheetView()
-                .environmentObject(viewModel)
-                .presentationDetents([.height(150), .medium, .large])
-                .presentationCornerRadius(25)
-                .presentationBackground(.regularMaterial)
-                .presentationBackgroundInteraction(.enabled(upThrough: .large))
-                .interactiveDismissDisabled()
-        }
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .ignoresSafeArea()
+    }
+
+    // Method to find the nearest snap position
+    private func nearestSnapPosition(to height: CGFloat) -> CGFloat {
+        let nearestPosition = snapPositions.min(by: { abs($0 - height) < abs($1 - height) }) ?? height
+        return nearestPosition
     }
 }
 
-struct SheetView: View {
-    @EnvironmentObject var viewModel: SharedViewModel
-    
+struct TabBar: View {
     var body: some View {
-        TabView {
-            FirstTabView()
-                .tabItem {
-                    Image(systemName: "1.square.fill")
-                    Text("First Tab")
-                }
-            SecondTabView()
-                .tabItem {
-                    Image(systemName: "2.square.fill")
-                    Text("Second Tab")
-                }
+        HStack {
+            Spacer()
+            Text("Tab 1")
+            Spacer()
+            Text("Tab 2")
+            Spacer()
+            Text("Tab 3")
+            Spacer()
         }
+        .foregroundColor(.white)
     }
 }
 
-struct FirstTabView: View {
-    @EnvironmentObject var viewModel: SharedViewModel
-    
-    var body: some View {
-        VStack {
-            Text("This is the first tab!")
-                .font(.largeTitle)
-                .padding()
-        }
-      
-        
-        .sheet(isPresented: $viewModel.isSettingsPresented) {
-            SettingsContentView()
-                .presentationCornerRadius(25)
-                .presentationBackgroundInteraction(.enabled(upThrough: .large))
-        }
-        .padding()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
     }
-}
-
-struct SecondTabView: View {
-    var body: some View {
-        VStack {
-            Text("This is the second tab!")
-                .font(.largeTitle)
-                .padding()
-            // Additional content for the second tab
-        }
-        .padding()
-    }
-}
-
-
-
-#Preview {
-    ContentView()
 }
