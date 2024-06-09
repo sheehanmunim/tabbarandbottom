@@ -2,179 +2,126 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: Int = 0
-    @State private var overlayHeight: CGFloat = 300 // Initial height
-    @State private var isDragging = false
-    @State private var dragGestureVerticalDirection: VerticalDirection? = nil
+    @State private var showSheet = true
+    @State private var settingsSheet = false
     
     var body: some View {
-        VStack {
-            Spacer()
-            
-            ZStack(alignment: .bottom) {
-                MainView()
-                
-                VStack(spacing: 0) {
-                    OverlayView(height: $overlayHeight, selectedTab: selectedTab)
-                        .frame(maxWidth: .infinity)
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    isDragging = true
-                                    let gestureVerticalDirection: VerticalDirection = value.translation.height < 0 ? .up : .down
-                                    if dragGestureVerticalDirection == nil {
-                                        dragGestureVerticalDirection = gestureVerticalDirection
-                                    }
-                                    if gestureVerticalDirection != dragGestureVerticalDirection {
-                                        dragGestureVerticalDirection = nil
-                                    }
-                                    
-                                    var proposed: CGFloat
-                                    if gestureVerticalDirection == .up {
-                                        proposed = overlayHeight - value.translation.height
-
-                                    } else {
-                                        proposed = max(150, min(overlayHeight - value.translation.height, UIScreen.main.bounds.height - 200))
-                                    }
-                                    
-                                    overlayHeight = proposed
-                                }
-                                .onEnded { value in
-                                    isDragging = false
-                                    dragGestureVerticalDirection = nil
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        overlayHeight = snapHeight(overlayHeight)
-                                    }
-                                }
-                        )
-                    
-                    TabView(selection: $selectedTab) {
-                        Color.clear
-                            .tabItem {
-                                Label("Tab 1", systemImage: "1.square.fill")
-                            }
-                            .tag(0)
-                        
-                        Color.clear
-                            .tabItem {
-                                Label("Tab 2", systemImage: "2.square.fill")
-                            }
-                            .tag(1)
-                    }
-                    .frame(height: 50)
-                }
-                .edgesIgnoringSafeArea(.bottom)
+        TabView(selection: $selectedTab){
+            HomeView(showSheet: $showSheet, settingsSheet: $settingsSheet, selectedTab: selectedTab)
+                .tabItem{
+                Label("Home", systemImage: "house")
             }
+                .toolbarBackground(.visible, for: .tabBar)
+                .toolbarBackground(.background, for: .tabBar)
+                .tag(0)
+            
+            HomeView(showSheet: $showSheet, settingsSheet: $settingsSheet, selectedTab: selectedTab)
+                .tabItem{
+                Label("Tab 2", systemImage: "2.square.fill")
+            }
+                .toolbarBackground(.visible, for: .tabBar)
+                .toolbarBackground(.background, for: .tabBar)
+                .tag(1)
+            
+        }
+        .sheet(isPresented: $settingsSheet)
+        {
+            SettingsView()
+                .presentationCornerRadius(25)
         }
     }
     
-    // Function to snap the height to the nearest snapping point
-    private func snapHeight(_ proposedHeight: CGFloat) -> CGFloat {
-        let maxSnapHeight = UIScreen.main.bounds.height - 200
-        
-        // Snap to max height sooner by reducing the threshold
-        if proposedHeight >= maxSnapHeight * 0.75 { // Snap when 75% or more
-            return maxSnapHeight
-        } else if proposedHeight >= 300 {
-            return 300
-        } else if proposedHeight >= 150 {
-            return 150
-        } else {
-            return proposedHeight
-        }
-    }
-    
-    enum VerticalDirection {
-        case up
-        case down
-    }
 }
 
-
-
-struct MainView: View {
-    @State private var isSheetPresented = false
+struct HomeView: View {
+    @Binding var showSheet: Bool
+    @Binding var settingsSheet: Bool
     
-    var body: some View {
-        VStack {
-            Text("Main View")
-                .font(.largeTitle)
-                .padding()
-            Spacer()
-            
-            Button(action: {
-                isSheetPresented = true
-            }) {
-                Text("Button in Main View")
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-            }
-            .sheet(isPresented: $isSheetPresented) {
-                // The content to be presented in the sheet
-                SheetContentView()
-            }
-            Spacer() // Add Spacer to push the button to the bottom
-        }
-    }
-}
-
-
-struct OverlayView: View {
-    @Binding var height: CGFloat
     var selectedTab: Int
-    let handleHeight: CGFloat = 5
-    let handleWidth: CGFloat = 50
     
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack {
-                if selectedTab == 0 {
-                    Text("Overlay View for Tab 1")
-                        .padding()
-                } else if selectedTab == 1 {
-                    Text("Overlay View for Tab 2")
-                        .padding()
-                }
+        VStack{
+            Button("Settings"){
+                settingsSheet.toggle()
+                
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .background(
-                RoundedRectangle(cornerRadius: 0, style: .continuous)
-                    .fill(Color.blue.opacity(0.8))
-                    .shadow(radius: 10)
-            )
-            .clipShape(RoundedCornersShape(corners: [.topLeft, .topRight], radius: 10))
-            
-            RoundedRectangle(cornerRadius: 5)
-                .frame(width: handleWidth, height: handleHeight)
-                .foregroundColor(.white)
-                .opacity(0.5)
-                .padding(.top, 10)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .bottom){
+            if showSheet {
+                SheetContent(selectedTab: selectedTab)
+                    .transition(.move(edge: .bottom))
+            }
+        }
+        .animation(.easeInOut, value: showSheet)
+        
+        
+        
     }
 }
 
-
-
-struct RoundedCornersShape: Shape {
-    var corners: UIRectCorner
-    var radius: CGFloat
+struct SheetContent: View {
+    let minHeight: CGFloat = 100
+    let snapHeight: CGFloat = 150
+    let midHeight: CGFloat = 400
+    let maxHeight: CGFloat = 700
+    @State private var extraHeight = CGFloat.zero
+    @State private var dragHeight = CGFloat.zero
     
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
+    var selectedTab: Int
+    
+    init(selectedTab: Int, extraHeight: CGFloat = 0){
+        self.selectedTab = selectedTab
+        _extraHeight = State(initialValue: snapHeight - minHeight)
+    }
+    
+    var body: some View{
+        VStack{
+            if selectedTab == 0 {
+                Text("First Tab")
+            }
+            else if selectedTab == 1 {
+                Text("Second Tab")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: minHeight + extraHeight)
+        .offset(y: -dragHeight / 2)
+        .background{
+            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 20, topTrailing: 20))
+                .padding(.bottom, -300)
+                .foregroundStyle(.yellow)
+                .offset(y: -dragHeight)
+        }
+        .overlay(alignment: .top){
+            Capsule()
+                .frame(width: 36, height: 5)
+                .foregroundStyle(.secondary)
+                .padding(5)
+                .offset(y: -dragHeight)
+        }
+        .animation(.easeInOut, value: extraHeight)
+        .animation(.easeInOut, value: dragHeight)
+        .gesture(
+            DragGesture()
+                .onChanged { val in
+                    let dy = -val.translation.height
+                    let minDragHeight = minHeight - (minHeight + extraHeight)
+                    let maxDragHeight = maxHeight - (minHeight + extraHeight)
+                    dragHeight = min(max(dy, minDragHeight), maxDragHeight)
+                }
+                .onEnded { _ in
+                    let snapPoints: [CGFloat] = [snapHeight, midHeight, maxHeight]
+                    let currentHeight = minHeight + extraHeight + dragHeight
+                    let closestSnapPoint = snapPoints.min(by: {abs($0 - currentHeight) < abs($1 - currentHeight) }) ?? snapHeight
+                    withAnimation(.easeInOut){
+                        extraHeight = closestSnapPoint - minHeight
+                        dragHeight = 0
+                    }
+                }
         )
-        return Path(path.cgPath)
     }
 }
 
-
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+#Preview{
+    ContentView()
 }

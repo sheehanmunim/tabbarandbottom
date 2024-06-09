@@ -11,7 +11,7 @@ import SwiftUI
 struct tabbarandbottomApp: App {
     var body: some Scene {
         WindowGroup {
-            InitialView()
+            ContentView()
         }
     }
 }
